@@ -1,110 +1,118 @@
 <?php
-
-session_start();
-if(!isset($_SESSION['username']))
-{ echo "<h1>Access Denied</h1>"; exit(); }
-
-$mysql_hostname = "localhost";
-$mysql_user = "root";
-$mysql_password = "murali=1256";
-$mysql_database = "library";
-$prefix = "";
-$bd = mysql_connect($mysql_hostname, $mysql_user, $mysql_password) or die("Could not connect database");
-$con=mysql_select_db($mysql_database, $bd) or die("Could not select database");
+//This page let users sign up
+include('config.php');
 ?>
-
-
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <link href="<?php echo $design; ?>/style.css" rel="stylesheet" title="Style" />
+        <title>Sign Up</title>
+    </head>
+    <body>
+    	<div class="header">
+        	<a href="<?php echo $url_home; ?>"><img src="<?php echo $design; ?>/images/logo.png" alt="Member Area" /></a>
+	    </div>
 <?php
-session_start();
-
-function test_input($data)
+if(isset($_POST['username'], $_POST['password'], $_POST['passverif'], $_POST['email'], $_POST['avatar']) and $_POST['username']!='')
 {
-  $data = trim($data);
-  $data = stripslashes($data);
-  $data = htmlspecialchars($data);
-  return $data;
-}
-
-$fname = test_input($_POST["fname"]);
-if (!preg_match("/^[a-zA-Z]*$/",$fname))
-  {
-  echo "<script> alert('First Name should contain only alphabets.....Registeration Failed!'); window.location='signup.htm'; </script>";
-  }
-
-$lname = test_input($_POST["lname"]);
-if (!preg_match("/^[a-zA-Z]*$/",$lname))
-  {
-  echo "<script> alert('Last Name should contain only alphabets.....Registeration Failed!'); window.location='signup.htm'; </script>";
-  }
-
-$username = test_input($_POST["username"]);
-if (!preg_match("/^[a-zA-Z0-9]*$/",$username))
-  {
-  echo "<script> alert('Username should contain only alphabets and numbers.....Registeration Failed!'); window.location='signup.htm'; </script>";
-  }
-
-$email = test_input($_POST["email"]);
-if (!preg_match("/([\w\-]+\@[\w\-]+\.[\w\-]+)/",$email))
-  {
-  echo "<script> alert('Invalid Email ID.....Registeration Failed!'); window.location='signup.htm'; </script>";
-  }
-
-$password = test_input($_POST["password"]);  
-
-$mobno = test_input($_POST["mobno"]);
-if (!preg_match("/[1-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]/",$mobno))
-  {
-  echo "<script> alert('Invalid Mobile No. .....Registeration Failed!'); window.location='signup.htm'; </script>";
-  }
-
-$role = $_POST["role"];
-
-if($role==1) {
-  $id=0;
-  $status=0;
-  $sql=mysql_query("SELECT * FROM Members WHERE (Username='$username' OR Email='$email')");
-
-  if(mysql_num_rows($sql)==1)
-   {
-    echo "<script> alert('Username or Email ID already exists!'); window.location='signup.htm'; </script>";
-   }
-   else {
-    mysql_query("INSERT INTO Members VALUES('$id','$fname', '$lname', '$email', '$username', '$password', '$mobno', $status)");
-    echo "<script> alert('Registered successfully!'); window.location='signin.htm'; </script>";
-    }
-}
-else 
-  if($role==2) {
-  $id=0;
-  $sql=mysql_query("SELECT * FROM Authors WHERE (Username='$username' OR Email='$email')");
-  
-  $sql1=mysql_query("SELECT * FROM Pending_authors WHERE (Username='$username' OR Email='$email')");
-
-  if(mysql_num_rows($sql)==1 || mysql_num_rows($sql1)==1)
-   {
-    echo "<script> alert('Username or Email ID already exists!'); window.location='signup.htm'; </script>";
-   }
-   else {
-    mysql_query("INSERT INTO Pending_authors VALUES('$id', '$fname', '$lname', '$email', '$username', '$password', '$mobno')");
-    echo "<script> alert('Pending admin approval for the postion of author!'); window.location='index_student.htm'; </script>";
-    }
-  }
-  else {
-  $id=0;
-  $sql=mysql_query("SELECT * FROM Managers WHERE (Username='$username' OR Email='$email')");
-
-  $sql1=mysql_query("SELECT * FROM Pending_managers WHERE (Username='$username' OR Email='$email')");
-
-  if(mysql_num_rows($sql)==1 || mysql_num_rows($sql1)==1)
-   {
-    echo "<script> alert('Username or Email ID already exists!'); window.location='signup.htm'; </script>";
-   }
-   else {
-    $id=0;
-    mysql_query("INSERT INTO Pending_managers VALUES('$id', '$fname', '$lname', '$email', '$username', '$password', '$mobno')");
-    echo "<script> alert('Pending admin approval for the postion of the Content Manager!'); window.location='index_student.htm'; </script>";
-    }
-  }
-
-mysql_close($con);
+	if(get_magic_quotes_gpc())
+	{
+		$_POST['username'] = stripslashes($_POST['username']);
+		$_POST['password'] = stripslashes($_POST['password']);
+		$_POST['passverif'] = stripslashes($_POST['passverif']);
+		$_POST['email'] = stripslashes($_POST['email']);
+		$_POST['avatar'] = stripslashes($_POST['avatar']);
+	}
+	if($_POST['password']==$_POST['passverif'])
+	{
+		if(strlen($_POST['password'])>=6)
+		{
+			if(preg_match('#^(([a-z0-9!\#$%&\\\'*+/=?^_`{|}~-]+\.?)*[a-z0-9!\#$%&\\\'*+/=?^_`{|}~-]+)@(([a-z0-9-_]+\.?)*[a-z0-9-_]+)\.[a-z]{2,}$#i',$_POST['email']))
+			{
+				$username = mysql_real_escape_string($_POST['username']);
+				$password = mysql_real_escape_string(sha1($_POST['password']));
+				$email = mysql_real_escape_string($_POST['email']);
+				$avatar = mysql_real_escape_string($_POST['avatar']);
+				$dn = mysql_num_rows(mysql_query('select id from users where username="'.$username.'"'));
+				if($dn==0)
+				{
+					$dn2 = mysql_num_rows(mysql_query('select id from users'));
+					$id = $dn2+1;
+					if(mysql_query('insert into users(id, username, password, email, avatar, signup_date) values ('.$id.', "'.$username.'", "'.$password.'", "'.$email.'", "'.$avatar.'", "'.time().'")'))
+					{
+						$form = false;
 ?>
+<div class="message">You have successfully been signed up. You can now log in.<br />
+<a href="login.php">Log in</a></div>
+<?php
+					}
+					else
+					{
+						$form = true;
+						$message = 'An error occurred while signing you up.';
+					}
+				}
+				else
+				{
+					$form = true;
+					$message = 'Another user already use this username.';
+				}
+			}
+			else
+			{
+				$form = true;
+				$message = 'The email you typed is not valid.';
+			}
+		}
+		else
+		{
+			$form = true;
+			$message = 'Your password must have a minimum of 6 characters.';
+		}
+	}
+	else
+	{
+		$form = true;
+		$message = 'The passwords you entered are not identical.';
+	}
+}
+else
+{
+	$form = true;
+}
+if($form)
+{
+	if(isset($message))
+	{
+		echo '<div class="message">'.$message.'</div>';
+	}
+?>
+<div class="content">
+<div class="box">
+	<div class="box_left">
+    	<a href="<?php echo $url_home; ?>">Forum Index</a> &gt; Sign Up
+    </div>
+	<div class="box_right">
+    	<a href="signup.php">Sign Up</a> - <a href="login.php">Login</a>
+    </div>
+    <div class="clean"></div>
+</div>
+    <form action="signup.php" method="post">
+        Please fill this form to sign up:<br />
+        <div class="center">
+            <label for="username">Username</label><input type="text" name="username" value="<?php if(isset($_POST['username'])){echo htmlentities($_POST['username'], ENT_QUOTES, 'UTF-8');} ?>" /><br />
+            <label for="password">Password<span class="small">(6 characters min.)</span></label><input type="password" name="password" /><br />
+            <label for="passverif">Password<span class="small">(verification)</span></label><input type="password" name="passverif" /><br />
+            <label for="email">Email</label><input type="text" name="email" value="<?php if(isset($_POST['email'])){echo htmlentities($_POST['email'], ENT_QUOTES, 'UTF-8');} ?>" /><br />
+            <label for="avatar">Avatar<span class="small">(optional)</span></label><input type="text" name="avatar" value="<?php if(isset($_POST['avatar'])){echo htmlentities($_POST['avatar'], ENT_QUOTES, 'UTF-8');} ?>" /><br />
+            <input type="submit" value="Sign Up" />
+		</div>
+    </form>
+</div>
+<?php
+}
+?>
+
+	</body>
+</html>
